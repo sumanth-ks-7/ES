@@ -1,0 +1,637 @@
+LED Blinking using Delay:
+--------------------------------------------
+
+#include<lpc214x.h>
+void delay();
+void main()
+{
+    IO0DIR |=0XfffffFFF;              //Port 0 is now acting as a output pin
+    while(1) {
+        IOSET0 |=0XfffffFFF;      //Port 0's all pins are high now (LED is glowing)
+        delay();
+        IOCLR0 |=0XFFFfffff;      //Port 0's all pins are low now (LED is OFF)
+        delay();
+    }   
+}       
+        
+void delay()
+{
+    unsigned int i;
+    for(i=0;i<30000;i++);
+}
+
+=======================================================================
+
+1. Implement a single task application for LPC2148 using C for the following: Glow the 8 led in 
+a round robin fashion. Write delay using for loop.
+Round Robin:
+----------------------------------
+
+#include <lpc214x.h>
+#define READ 0
+
+void delay();
+
+void main()
+{
+	unsigned int i = 0;
+	IO0DIR = 0XFFFFFFFF;
+	IO1DIR = 0X00;
+	while(1)
+	 {
+		if((IO1PIN & (1<<16)) == READ)
+		{
+			for (i = 0; i < 8 ;i++)
+			{
+			IOSET0 |= (1<<i)  ;
+			delay();
+			IOCLR0 |= (1<<i);
+			delay();
+			}
+	}
+}
+}
+void delay()
+{
+ unsigned int i;
+ for(i=0;i<30000;i++);
+ }
+
+==========================================================================
+
+2. Implement a single task application for LPC2148 using C for the following: Glow the 8 led in 
+a round robin fashion. Write delay using timer.
+Round Robin Using Timer:
+--------------------------------------------
+
+#include <lpc214x.h>
+#define READ 0
+
+void pll(void);
+void delay(unsigned int z);
+
+int main(void)
+{
+    unsigned int i;
+	IO0DIR=0xffffffff;
+    pll(); 
+	while(1)
+	{                 //Fosc=12Mhz,CCLK=60Mhz,PCLK=60MHz
+    	if((IO1PIN & (1<<16)) == READ)
+		{
+			for (i = 0; i < 8 ;i++)
+			{
+			IOSET0 |= (1<<i)  ;
+			delay(100);
+			IOCLR0 |= (1<<i);
+			delay(100);
+			}
+			
+	}              //1sec delay
+    }
+}
+
+void pll(void)                  //Fosc=12Mhz,CCLK=60Mhz,PCLK=60MHz
+{
+    PLL0CON=0x01;
+    PLL0CFG=0x24;
+    PLL0FEED=0xaa;
+    PLL0FEED=0x55;
+    while(!(PLL0STAT&(1<<10)));
+    PLL0CON=0x03;
+    PLL0FEED=0xaa;
+    PLL0FEED=0x55;
+    VPBDIV=0x01;
+}
+
+
+void delay(unsigned int z)
+{
+    T0CTCR=0x0;                                 //Select Timer Mode
+    T0TCR=0x00;                 //Timer off
+    T0PR=59999;                 //Prescaler value for 1ms
+    T0TCR=0x02;                 //Timer reset
+    T0TCR=0x01;                 //Timer ON
+    while(T0TC<z);           
+    T0TCR=0x00;                 //Timer OFF
+    T0TC=0;                     //Clear the TC value. This is Optional.
+}
+
+=======================================================================================
+
+
+8. Implement a C program on press of a switch , make the led glow.
+
+
+#include<lpc214x.h>
+void delay();
+void main()
+{
+    IO0DIR |=0XfffffFFF;                   //Port 0 is now acting as a output pin
+    IO1DIR = 0x0;                          //Port 1 is now acting as a input pin
+    while(1)
+    {
+        if((IO1PIN & (1<<16)) ==0)     //Checking 16th pin of Port 1
+            IOSET0 |=0XfffffFFF;   //Port 0's all pins are high now (LED is glowing)
+        else
+            IOCLR0 |=0XFFFfffff;   //Port 0's all pins are low now (LED is OFF)
+    }
+        
+}       
+        
+void delay()
+{
+    unsigned int i;
+    for(i=0;i<30000;i++);
+}
+
+============================================================================================
+
+
+13. Implement a C program to display "MSIS" on LCD(4-bit).
+
+#include<lpc214x.h>
+ 
+#define bit(x) (1<<x)
+ 
+void lcd_init();
+void cmd(unsigned char a);
+void dat(unsigned char b);
+void show(unsigned char *s);
+void lcd_delay();
+ 
+#define delay for(i=0;i<55000;i++)
+ 
+unsigned int range=0,i;
+ 
+int main()
+{
+    VPBDIV=0x01;                 // PCLK = 60MHz
+    IO0DIR=0x0FC;
+    lcd_init();
+    cmd(0x89);
+    show("MSIS");
+ 
+    while(1) {
+        cmd(0x18);
+        delay;
+    }
+}
+ 
+void lcd_init()
+{
+        cmd(0x02);
+    cmd(0x28);
+    cmd(0x0c);
+    cmd(0x06);
+    cmd(0x80);
+}
+ 
+void cmd(unsigned char a)
+{
+    IO0PIN&=0xffffff03;
+    IO0PIN|=(a & 0xf0) << 0;
+    IO0CLR|=bit(2);                //rs=0
+    IO0CLR|=bit(1);                //rw=0
+    IO0SET|=bit(3);                 //en=1
+    lcd_delay();
+    IO0CLR|=bit(3);                 //en=0
+    
+    IO0PIN&=0xffffff03;
+    IO0PIN|=((a << 4)  & 0xf0) << 0;
+    IO0CLR|=bit(2);                //rs=0
+    IO0CLR|=bit(1);                //rw=0
+    IO0SET|=bit(3);                 //en=1
+    lcd_delay();
+    IO0CLR|=bit(3);                 //en=0
+}
+ 
+void dat(unsigned char b)
+{
+    IO0PIN&=0xffffff03;
+    IO0PIN|=(b & 0xf0) << 0;
+    IO0SET|=bit(2);                //rs=1
+    IO0CLR|=bit(1);                //rw=0
+    IO0SET|=bit(3);            //en=1
+    lcd_delay();
+    IO0CLR|=bit(3);            //en=0
+    
+    IO0PIN&=0xffffff03;
+    IO0PIN|=((b << 4)  & 0xf0) << 0;
+    IO0SET|=bit(2);                //rs=1
+    IO0CLR|=bit(1);                //rw=0
+    IO0SET|=bit(3);            //en=1
+    lcd_delay();
+    IO0CLR|=bit(3);            //en=0
+}
+ 
+void show(unsigned char *s)
+{
+    while(*s) {
+        dat(*s++);
+    }
+}
+ 
+void lcd_delay()
+    {
+    unsigned int i;
+    for(i=0;i<=1000;i++);
+}
+
+
+============================================================================================
+
+13. Implement a C program to display "MSIS" on LCD(8-bit).
+
+
+#include<lpc214x.h>
+ 
+#define bit(x) (1<<x)
+#define delay for(i=0;i<2000;i++);
+ 
+unsigned int i;
+ 
+void lcd_int();
+void dat(unsigned char a);
+void cmd(unsigned char b);
+void string(unsigned char *s);
+void lcd_delay();
+ 
+void main()
+{
+    IO0DIR|=0XFFF;
+    lcd_int();
+    cmd(0x8a);
+    string("MSIS");
+    while(1) {
+        cmd(0x18);
+        delay;
+			
+    }
+}
+ 
+void lcd_int()
+{
+    cmd(0x30);
+    cmd(0x0c);
+    cmd(0x06);
+    cmd(0x01);
+    cmd(0x80);
+}
+ 
+void cmd(unsigned char a)
+{
+    IO0PIN&=0x00;
+    IO0PIN|=(a<<0);
+    IO0CLR|=bit(8);                //rs=0
+    IO0CLR|=bit(9);                //rw=0
+    IO0SET|=bit(10);               //en=1
+    delay;
+    IO0CLR|=bit(10);               //en=0
+}
+ 
+void dat(unsigned char b)
+{
+    IO0PIN&=0x00;
+    IO0PIN|=(b<<0);
+    IO0SET|=bit(8);                //rs=1
+    IO0CLR|=bit(9);                //rw=0
+    IO0SET|=bit(10);               //en=1
+    delay;
+    IO0CLR|=bit(10);               //en=0
+}
+ 
+void string(unsigned char *p)
+{
+    while(*p!='\0') {
+        dat(*p++);
+    }
+}
+
+
+=============================================================================
+
+
+UART
+----------------
+
+
+#include <lpc214x.h>
+
+#define RDR (1<<0) // Receiver Data Ready
+#define THRE (1<<5) // Transmit Holding Register Empty
+#define MULVAL 15
+#define DIVADDVAL 1
+#define NEW_LINE 0xA // Character for new line .. analogous to '\n'
+#define ENTER 0xD // Ascii code for Enter 
+
+void pll()                  //Fosc=12Mhz,CCLK=60Mhz,PCLK=60MHz
+{
+    PLL0CON=0x01;
+    PLL0CFG=0x24;
+    PLL0FEED=0xaa;
+    PLL0FEED=0x55;
+    while(!(PLL0STAT&(1<<10)));
+    PLL0CON=0x03;
+    PLL0FEED=0xaa;
+    PLL0FEED=0x55;
+    VPBDIV=0x01;
+}
+
+void InitUART0()
+{
+  PINSEL0 = 0x5;  /* Select TxD for P0.0 and RxD for P0.1 */ 
+  U0LCR	= 3 | (1<<7) ; /* 8 bits, no Parity, 1 Stop bit | DLAB set to 1  */
+  U0DLL	= 110;
+  U0DLM = 1;	
+  U0FDR = (MULVAL<<4) | DIVADDVAL; /* MULVAL=15(bits - 7:4) , DIVADDVAL=0(bits - 3:0)  */
+  U0LCR &= 0x0F; // Set DLAB=0 to lock MULVAL and DIVADDVAL
+  //BaudRate is now ~9600 and we are ready for UART communication!
+ 
+}
+
+char U0Read()
+{
+     while( !(U0LSR & RDR ) ); // wait till any data arrives into Rx FIFO
+     return U0RBR; 
+}
+
+void U0Write(char data)
+{
+     while ( !(U0LSR & THRE ) ); // wait till the THR is empty
+     // now we can write to the Tx FIFO
+     U0THR = data;
+}
+
+int main(void)
+{
+	pll(); // Set CCLK=60Mhz and PCLK=60Mhz 
+	InitUART0();
+	IO1DIR |= 0xFFFFffff;
+	
+	while(1)		
+	{
+		char c = U0Read(); // Read Data from Rx
+		/*if( c == ENTER ) // Check if user pressed Enter key
+		{
+			U0Write(NEW_LINE); // Send New Line ASCII code change line
+		}
+		else
+		{
+			U0Write(c); // Write it to Tx to send it back
+		}*/
+		switch (c) {
+		case '1':
+			U0Write(NEW_LINE);
+			IOSET1 |= 0xFFFFffff;
+			break;
+
+		case '2':
+			U0Write(NEW_LINE);
+			IOCLR1 |= 0xFFFFffff;
+			break;
+		}
+	}
+	return 0;
+}
+
+
+============================================================================================================
+
+
+Basic ARM LPC218 ASSEMBLY CODES-I
+PROGRAM 1.a:
+
+ADDITION OF TWO 32 BIT NUMBERS.
+
+ area addition,code,readonly
+entry
+            mov r0,#00000009
+            mov r1,#00000005
+            add r2,r1,r0
+             end
+
+
+
+PROGRAM 1.b:
+
+
+ADDITION OF TWO 64 BIT NUMBERS.
+
+
+        area addition,code,readonly
+entry
+             ldr r0,=0x11111111
+             ldr r1,=0x22222222
+             ldr r2,=0x33333333
+             ldr r3,=0x44444444
+             adds r4,r0,r2
+             adcs r5,r1,r3
+
+             end
+
+
+PROGRAM 1.c:
+
+ADDITION OF 'N' 32 BIT NUMBERS.
+
+       area nadd,code,readonly
+entry
+             ldr r0,=0x40000000
+             mov r2,#05             // number of 32 bit no. to be added
+
+             ldr r3,[r0],#04
+back      ldr r4,[r0],#04
+             add r3,r3,r4
+             subs r2,r2,#01
+             cmp r2,#00
+             bne back
+stop   b  stop
+
+             end
+
+
+
+PROGRAM 2.a:
+
+DATA EXCHANGE
+
+
+   area data_exch,code,readonly
+entry
+      ldr r0,=0x40000000
+      ldr r1,=0x40000044
+      mov r4,#09
+
+loop  ldr r2,[r0]
+      mov r5,r2
+      ldr r6,[r1]
+      str r6,[r0],#04
+      str r5,[r1],#04
+      subs r4,#01
+      cmp r4,#00
+      bne loop
+stop  b stop
+
+      end
+
+
+
+PROGRAM 2.b:
+
+BLOCK OF DATA TRANSFER
+
+
+     area data_trans,code,readonly
+entry
+             ldr r0,=0x40000000
+      ldr r1,=0x40000044
+      mov r4,#09
+
+loop     ldr r2,[r0],#04
+            str r2,[r1],#04
+     subs r4,#01
+     cmp r4,#00
+     bne loop
+stop  b stop
+
+          end
+
+
+
+
+PROGRAM 3.a:
+
+COVERTING ASCII TO HEX
+
+      area ascii_hex,code,readonly
+entry
+       mov r0,#&41
+    mov r1,#&46
+    mov r3,r0
+    bl next
+    mov r4,r3,lsl#04
+    mov r3,r1
+    bl next
+    add r5,r4,r3
+    b stop
+
+next   cmp r3,#&39
+    subls r3,r3,#&30
+    subgt r3,r3,#&37
+    mov pc,lr
+stop   b stop
+    end
+
+
+
+PROGRAM 3.b:
+
+
+CONVERTING HEX NUMBER TO ASCII NUMBER
+
+     area hex_ascii,code,readonly
+entry
+      mov r0,#&af
+      mov r1,r0
+      and r2,r1,#&0f
+      bl next
+      mov r3,r2
+      and r2,r0,#&f0
+      mov r2,r2,lsr#04
+      bl next
+      b stop
+
+next  cmp r2,#09
+      addcs r2,r2,#&37
+      addcc r2,r2,#&30
+      mov pc,lr
+stop  b stop
+
+      end
+
+
+
+
+PROGRAM 3.c:
+
+CONVERTING BINARY TO GRAY
+
+     area binary_gray,code,readonly
+entry
+     mov r0,#0x06
+     mov r1,#08
+     lsr r2,r2,#01
+     eor r2,r2,r1
+stop b stop
+
+     end
+
+
+
+PROGRAM 3.d:
+
+
+CONVERTING GRAY TO BINARY
+
+        area gray_binary,code,readonly
+entry
+                mov r0,#0x58
+  mov r1,r0
+  mov r2,#07
+loop   mov r1,r1,lsr#01
+  eor r0,r0,r1
+  subs r2,r2,#01
+  cmp r2,#00
+  bne loop
+stop    b  stop
+
+ end
+
+
+
+PROGRAM 4:
+
+DIVISION OF TWO NUMBERS BY SUCCESSIVE SUBTRACTION 
+
+
+  area division,code,readonly
+entry
+     mov r0,#25
+     mov r1,#04
+     cmp r0,r1
+     movge r3,r0
+     movls r3,r1
+     movcs r4,r1
+     movcc r4,r0
+
+loop subs r3,r3,r4
+     add r2,r2,#01      //divisible
+     cmp r3,r4
+     bge loop
+     mov r5,r3          //r3 holds quotient
+stop b stop
+
+     end
+
+
+
+
+PROGRAM 5:
+
+FINDING FACTORIAL OF NUMBER WITHOUT LOOKUP TABLE
+
+      area fact_wout_lt,code,readonly
+entry
+      mov r0,#10
+      mov r1,#01
+back  mul r2,r0,r1
+      mov r1,r2
+      subs r0,r0,#01
+      cmp r0,#00
+      bne back
+stop  b  stop
+
+      end
+
+
