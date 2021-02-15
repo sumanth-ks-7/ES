@@ -1,0 +1,436 @@
+Distance Measurement (Ultrasonic Sensor)
+----------------------------------------------------------
+
+#include "LiquidCrystal.h"  //lcd libary                                       
+LiquidCrystal lcd(2, 3, 4, 5, 6, 7);   //LCD object Parameters: (rs, enable, d4, d5, d6, d7)
+
+const int trigPin = 12; //trig pin connection defines the pin numbers
+const int echoPin = 11;  //echopin connection defines the pin numbers
+
+long duration;            // defines variables
+int distanceCm, distanceInch;
+float liquid;
+                                                                                                            
+void setup() {      // setup perameter
+lcd.begin(16,2);    // Initializes the interface to the LCD screen, and specifies the dimensions (width and height) of the display                                               
+pinMode(trigPin, OUTPUT);
+pinMode(echoPin, INPUT);
+lcd.setCursor(0,0);
+lcd.print("  Distance    ");
+lcd.setCursor(0,1);
+lcd.print("  Measurement  ");
+delay(2000);
+lcd.clear();
+lcd.setCursor(0,0);
+lcd.print("    Made By    ");
+lcd.setCursor(0,1);
+lcd.print("  Sumantha K S  ");
+delay(2000);
+lcd.clear();
+}
+
+void loop() {   // loop of flow program
+digitalWrite(trigPin, LOW);     // Clears the trigPin
+delayMicroseconds(2);
+digitalWrite(trigPin, HIGH);    // Sets the trigPin on HIGH state for 10 micro seconds
+delayMicroseconds(10);
+digitalWrite(trigPin, LOW);
+
+duration = pulseIn(echoPin, HIGH);      //To receive the reflected signal.
+
+distanceCm= duration*0.034/2;           // Calculating the distance
+distanceInch = duration*0.0133/2;
+                                                                                
+lcd.setCursor(0,0);                     // Sets the location where text written to the LCD will be displayed                            
+lcd.print("Distance: ");                // Prints string "Distance" on the LCD
+lcd.print(distanceCm);                  // Prints the distance value from the sensor
+lcd.print(" Cm ");
+delay(10);
+lcd.setCursor(0,1);
+lcd.print("Distance:");
+lcd.print(distanceInch);
+lcd.print(" inch    ");
+delay(10);
+}
+
+
+=======================================================================================================================
+
+Humidity-Temperature (DHT11)
+-------------------------------------
+
+#include "DHT.h"
+#define dht_1 2
+#define DHTTYPE DHT11
+DHT dht(dht_1, DHTTYPE);
+
+void setup() {
+  Serial.begin(9600);
+  dht.begin();
+}
+
+  void loop() {
+    delay(2000);
+
+    float humid = dht.readHumidity();
+    float temp = dht.readTemperature();
+
+    Serial.println("humidity= ");
+    Serial.println(humid);
+    Serial.println("temperature= ");
+    Serial.println(temp);
+    Serial.println("degree centigrade");
+    
+  }
+
+=======================================================================================================================
+
+LDR:
+--------------
+
+void setup() {
+  // initialize serial communication at 9600 bits per second:
+  Serial.begin(9600);
+}
+
+// the loop routine runs over and over again forever:
+void loop() {
+  // read the input on analog pin 0:
+  int sensorValue = analogRead(A0);
+  // print out the value you read:
+  Serial.println(sensorValue);
+  delay(1);        // delay in between reads for stability
+}
+
+------------------------------------------------------------------------------
+
+// the setup routine runs once when you press reset:
+void setup() {
+  // initialize serial communication at 9600 bits per second:
+  Serial.begin(9600);
+  pinMode(10,OUTPUT);
+}
+
+// the loop routine runs over and over again forever:
+void loop() {
+  // read the input on analog pin 0:
+  int sensorValue = analogRead(A0);
+  // print out the value you read:
+  Serial.println(sensorValue);
+
+  if(sensorValue<30)
+  {
+    digitalWrite(10,HIGH);
+  
+  }
+  else
+  {
+    digitalWrite(10,LOW);
+  }
+  delay(100);        // delay in between reads for stability
+}
+
+==========================================================================================
+
+
+Pressure Sensor (BMP 180)
+------------------------------------
+
+#include <Wire.h>
+#include <Adafruit_BMP085.h>
+#define seaLevelPressure_hPa 1013.25
+
+Adafruit_BMP085 bmp;
+  
+void setup() {
+  Serial.begin(9600);
+  if (!bmp.begin()) {
+  Serial.println("Could not find a valid BMP085 sensor, check wiring!");
+  while (1) {}
+  }
+}
+  
+void loop() {
+    Serial.print("Temperature = ");
+    Serial.print(bmp.readTemperature());
+    Serial.println(" *C");
+    
+    Serial.print("Pressure = ");
+    Serial.print(bmp.readPressure());
+    Serial.println(" Pa");
+
+    Serial.print("Altitude = ");
+    Serial.print(bmp.readAltitude());
+    Serial.println(" meters");
+
+    Serial.print("Pressure at sealevel (calculated) = ");
+    Serial.print(bmp.readSealevelPressure());
+    Serial.println(" Pa");
+
+    Serial.print("Real altitude = ");
+    Serial.print(bmp.readAltitude(seaLevelPressure_hPa * 100));
+    Serial.println(" meters");
+    
+    Serial.println();
+    delay(500);
+}
+
+================================================================================================
+
+
+Flex Sensor:
+------------------------
+
+//Constants:
+const int ledPin = 3;   //pin 3 has PWM funtion
+const int flexPin = A0; //pin A0 to read analog input
+
+//Variables:
+int value; //save analog value
+
+
+void setup(){
+  
+  pinMode(ledPin, OUTPUT);  //Set pin 3 as 'output'
+  Serial.begin(9600);       //Begin serial communication
+
+}
+
+void loop(){
+  
+  value = analogRead(flexPin);         //Read and save analog value from potentiometer
+  Serial.println(value);               //Print value
+  value = map(value, 700, 900, 0, 255);//Map value 0-1023 to 0-255 (PWM)
+  analogWrite(ledPin, value);          //Send PWM value to led
+  delay(100);                          //Small delay
+  
+}
+
+------------------------------------------------------
+
+const int flexPin = A0; 
+const int ledPin = 7; 
+
+void setup() 
+{ 
+  Serial.begin(9600);
+  pinMode(ledPin,OUTPUT);
+} 
+
+void loop() 
+{ 
+  int flexValue;
+  flexValue = analogRead(flexPin);
+  Serial.print("sensor: ");
+  Serial.println(flexValue);
+  
+  if(flexValue>890)
+     digitalWrite(ledPin,HIGH);
+  else
+    digitalWrite(ledPin,LOW);
+  
+  delay(20);
+} 
+
+----------------------------------------------------------
+
+#include <Servo.h> 
+
+Servo myServo;
+
+const int flexPin = A0; 
+
+void setup() 
+{ 
+  myServo.attach(11);
+} 
+
+void loop() 
+{ 
+  int flexValue;
+  int servoPosition;
+  
+  flexValue = analogRead(flexPin);
+  
+  servoPosition = map(flexValue, 800, 900, 0, 180);
+  servoPosition = constrain(servoPosition, 0, 180);
+
+  myServo.write(servoPosition);
+  
+  delay(20);
+} 
+
+================================================================================================
+
+Temperature Measurement:
+---------------------------
+
+#include <LiquidCrystal.h>  //lcd libary                                       
+LiquidCrystal lcd(7,6,5,4,3,2);   //LCD object Parameters: (d7,d6,d5,d4,enable,rs)
+
+int outputpin= A1;    // analog pin
+int cel;
+int far;
+int temp;
+
+void setup()
+{
+  
+  pinMode(outputpin, INPUT);
+ 
+  lcd.begin(16,2);    // Initializes the interface to the LCD screen, and specifies the dimensions (width and height) of the display                                               
+  lcd.setCursor(0,0);
+  lcd.print("  Temperature  ");
+  lcd.setCursor(0,1);
+  lcd.print("  Measurement  ");
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("    Made By    ");
+  lcd.setCursor(0,1);
+  lcd.print("  Sumantha K S  ");
+  delay(2000);
+  lcd.clear();
+  Serial.begin(9600);
+}
+
+//main loop
+void loop()
+{
+  temp = analogRead(A1);
+  temp = temp * 0.48828125; // (5000*10)/1024=0.48828125; millivolts = (rawvoltage*5000)/1024 : cel = millivolts/10
+  cel = temp;
+  far = (cel*9)/5 + 32;
+  // far = far+32;
+   Serial.print(temp);
+   
+  
+  // display on serial monitor
+
+  lcd.setCursor(0,0);
+  lcd.print("   Temperature   ");
+  lcd.setCursor(3,1);
+  lcd.print(cel);
+  lcd.print(char(223));
+  lcd.print("C");
+  lcd.setCursor(8,1);
+  lcd.print("|");
+  lcd.setCursor(11,1);
+  lcd.print(far);
+  lcd.print(char(223));
+  lcd.print("F");
+  delay(1000);
+  lcd.clear();
+  
+}
+
+==================================================================================================
+
+
+
+
+=====================================================================================================
+
+Remote Temp Control For Car
+------------------------------
+
+#include <LiquidCrystal.h>
+#include <String.h>
+LiquidCrystal lcd(7,6,5,4,3,2);
+int tempPin = A1;   // the output pin of LM35
+int mtr = 11;       // In this pin where motor is connected & o/p of  LM35 is triggering this pin
+const int out2 = 12;      // In this pin where motor is connected & o/p of  RX is triggering this pin
+const int inp2 = 0;   // connected to RX module
+
+int temp;
+int tempMin = 30;   // the temperature to stop the Motor turns OFF
+int tempMax = 40;   // the maximum temperature when Motor turns ON
+int motor;
+String mtrLCD;
+String a="OFF", b="ON";
+
+int out2State = LOW;
+
+void setup() 
+{
+  
+  pinMode(mtr, OUTPUT);
+  pinMode(tempPin, INPUT);
+  pinMode(inp2,INPUT);
+  pinMode(out2,OUTPUT);
+  lcd.begin(16,2);
+  lcd.setCursor(0,0);
+  lcd.print("  Temperature  ");
+  lcd.setCursor(0,1);
+  lcd.print("  Measurement  ");
+  delay(2000);
+  lcd.clear();
+  lcd.setCursor(0,0);
+  lcd.print("    Made By    ");
+  lcd.setCursor(0,1);
+  lcd.print("  Sumantha K S  ");
+  delay(2000);
+  lcd.clear(); 
+  Serial.begin(9600);
+  
+}
+
+void loop() 
+{  
+   temp = readTemp();     // get the temperature
+   Serial.print( temp );
+   
+    if(temp >= tempMax) // if temp is greater than maximum temp
+    
+     { 
+       motor = 1;      // motor is in ON state
+       analogWrite(mtr, motor); 
+       digitalWrite(mtr, HIGH);
+       mtrLCD = b;
+       Serial.print(mtrLCD);
+     } 
+     
+    if(temp <= tempMin) // if temp is less than minimum temp
+     {
+       motor = 0;      // motor is in ON state
+       analogWrite(mtr, motor); 
+       digitalWrite(mtr, LOW);  
+       mtrLCD = a;
+       Serial.print(mtrLCD);
+     }
+
+    if(digitalRead(inp2)==1) // remote signal received 
+     {
+       digitalWrite(out2, HIGH); 
+       delay(36000);             // motor will run for 1 minute
+ 
+     }
+     else
+     {
+       digitalWrite(out2, LOW);
+ 
+     }
+       
+    
+   lcd.print("TEMP: ");
+   lcd.print(temp);      // display the temperature
+   lcd.print(char(223));
+   lcd.print("C ");
+   lcd.setCursor(0,1);   // move cursor to next line
+   lcd.print("MOTOR: ");
+   lcd.print(mtrLCD);    // display the motor status
+   lcd.print("");
+   delay(200);
+   lcd.clear();   
+}
+
+int readTemp() {  // get the temperature and convert it to celsius
+  temp = analogRead(tempPin);
+  return temp * 0.48828125;
+}
+
+
+
+
+
+
