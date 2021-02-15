@@ -326,6 +326,78 @@ void loop()
 
 ==================================================================================================
 
+Multiple Sensor (Ultra Sonic Sensor + DHT Sensor)
+--------------------------------------------------
+
+#include <DHT.h>
+#include <DHT_U.h>
+#include <LiquidCrystal.h>
+
+#define ECHO 12
+#define TRIG 13
+#define DHT_11 2
+#define DHT_TYPE DHT11
+
+const int inp = 11;
+const int D7 = 4, D6 = 5, D5 = 6, D4 = 7, RS = 9, EN = 8;
+LiquidCrystal LCD(RS, EN, D4, D5, D6, D7);
+DHT dht(DHT_11, DHT_TYPE); // Initilizing pin and data type
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(9600);
+  dht.begin();
+
+  // LCD init
+  LCD.begin(16, 2);
+  LCD.print(" DHT11 ");
+  delay(1000);
+  LCD.clear();  
+  
+  // Ultrasonic
+  pinMode(TRIG, OUTPUT);
+  pinMode(ECHO, INPUT);
+
+  // Switch pin
+  pinMode(inp, INPUT);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  const int stat = digitalRead(inp);
+  if(stat == 1) {
+      float t = dht.readTemperature();
+      LCD.setCursor(0, 0);
+      LCD.print("Temp: ");
+      LCD.print(t);
+      delay(1000);
+      LCD.clear();
+      LCD.setCursor(0, 1);
+      float h = dht.readHumidity();
+      LCD.print("Humidity: ");
+      LCD.print(h);
+      delay(1000);
+      LCD.clear(); 
+  } 
+  else {
+      digitalWrite(TRIG, LOW);
+      delay(10);
+      digitalWrite(TRIG, HIGH);
+      delay(15);
+      digitalWrite(TRIG, LOW);
+    
+      long time_u = pulseIn(ECHO, HIGH);
+      long distCM = 0.034*(time_u/2);
+    
+      LCD.setCursor(0, 1);
+      LCD.print("Distance: ");
+      LCD.print(distCM);
+      LCD.print("cm");
+      delay(1000);
+      LCD.clear();  
+  }
+}
+
 
 
 
